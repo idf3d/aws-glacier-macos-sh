@@ -12,21 +12,32 @@
 #
 # Author: Damien Radtke <damienradtke at gmail dot com>
 # License: WTFPL
-
-# Set this to the name of the Glacier vault to upload to.
-VAULT_NAME=...
-# 1 MiB in bytes; the tree hash algorithm requires chunks of this
+# 4 MiB in bytes; the tree hash algorithm requires chunks of this
 # size.
-CHUNK_SIZE=1048576
+CHUNK_SIZE=4194304
 
 if [[ -z "${1}" ]]; then
     echo "No file provided."
+    echo "Usage: upload.sh <file> <description> <vault name>"
     exit 1
 fi
-ARCHIVE="`realpath ${1}`"
-ARCHIVE_SIZE=`cat "${ARCHIVE}" | wc --bytes`
 
-TEMP=`mktemp --directory`
+if [[ -z "${2}" ]]; then
+    echo "No description provided."
+    exit 1
+fi
+
+if [[ -z "${2}" ]]; then
+    echo "No vault name provided."
+    exit 1
+fi
+
+VAULT_NAME="${3}"
+
+ARCHIVE="`[[ $1 = /* ]] && echo \"$1\" || echo \"$PWD/${1#./}\"`"
+ARCHIVE_SIZE=`stat -f%z ${ARCHIVE}`
+
+TEMP=`mktemp -d`
 cd "${TEMP}"
 
 # Clean up at exit.
@@ -38,16 +49,21 @@ function cleanup {
 trap cleanup EXIT
 
 echo "Initiating multipart upload..."
+echo "Vault name: $3"
+echo "File: $1"
+echo "Description: $2"
 
 # Split the archive into chunks.
-split --bytes=${CHUNK_SIZE} "${ARCHIVE}" chunk
+split -a 5 -b ${CHUNK_SIZE} "${ARCHIVE}" chunk
 NUM_CHUNKS=`ls chunk* | wc -l`
+
+echo "Chunks created: $NUM_CHUNKS"
 
 # Initiate upload.
 UPLOAD_ID=$(aws glacier initiate-multipart-upload \
     --account-id=- \
     --vault-name="${VAULT_NAME}" \
-    --archive-description="`basename \"${ARCHIVE}\"`" \
+    --archive-description="${2}" \
     --part-size=${CHUNK_SIZE} \
     --query=uploadId | sed 's/"//g')
 

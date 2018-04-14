@@ -7,7 +7,6 @@ This is macOS version of [https://damienradtke.com/post/glacier-backup-bash/
 
 Differences:
 
-* Chunk size changed to 4MiB, which is more appropriate for large files
 * Added archive description and vault name parameters
 * macOS commands (slightly different from linux)
 * Prints out some more information on start

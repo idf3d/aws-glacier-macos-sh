@@ -12,9 +12,9 @@
 #
 # Author: Damien Radtke <damienradtke at gmail dot com>
 # License: WTFPL
-# 4 MiB in bytes; the tree hash algorithm requires chunks of this
+# 1 MiB in bytes; the tree hash algorithm requires chunks of this
 # size.
-CHUNK_SIZE=4194304
+CHUNK_SIZE=1048576
 
 if [[ -z "${1}" ]]; then
     echo "No file provided."
